@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Terraform LogViewer</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #0b1220; color: #e6e9ef; }
+    header { padding: 16px 24px; background: #111a2b; border-bottom: 1px solid #263042; }
+    h1 { font-size: 18px; margin: 0; }
+    main { padding: 16px 24px; }
+    .card { background: #101828; border: 1px solid #263042; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .row { display: grid; grid-template-columns: 160px 1fr; gap: 8px 16px; align-items: start; }
+    label { color: #9fb2cc; }
+    input[type="file"] { color: #cdd6f4; }
+    button { background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+    button:disabled { background: #334155; cursor: not-allowed; }
+    .toolbar { display: flex; gap: 8px; align-items: center; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid #2b3b52; color: #9fb2cc; font-size: 12px; }
+    .list { display: grid; gap: 8px; }
+    .item { border: 1px solid #263042; border-radius: 8px; background: #0e1626; }
+    .item-header { display: grid; grid-template-columns: 200px 90px 90px 1fr 220px; gap: 8px; padding: 8px 12px; align-items: center; cursor: pointer; }
+    .item-header:hover { background: #0f1b31; }
+    .time { color: #93c5fd; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
+    .level { text-transform: uppercase; font-weight: 600; font-size: 11px; }
+    .level.info { color: #22c55e; }
+    .level.debug { color: #60a5fa; }
+    .level.trace { color: #a78bfa; }
+    .level.warn { color: #f59e0b; }
+    .level.error { color: #ef4444; }
+    .section { color: #cbd5e1; font-size: 12px; }
+    .msg { color: #e2e8f0; white-space: pre-wrap; }
+    .details { display: none; padding: 10px 12px 12px; border-top: 1px dashed #243143; }
+    .details-grid { display: grid; grid-template-columns: 1fr 48%; gap: 12px; align-items: start; }
+    .kv { display: grid; grid-template-columns: 180px 1fr; gap: 6px 12px; }
+    .code { background: #0b1324; border: 1px solid #263042; border-radius: 8px; padding: 8px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #dbeafe; overflow: auto; max-height: 280px; }
+    .muted { color: #9fb2cc; }
+    .filename { text-align: right; color: #9fb2cc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Terraform LogViewer</h1>
+  </header>
+  <main>
+    <div class="card">
+      <div class="row" style="margin-bottom:12px;">
+        <label for="file">Файл логов (JSON lines)</label>
+        <input type="file" id="file" />
+        <div></div>
+        <div class="toolbar">
+          <button id="uploadBtn" disabled>Загрузить и разобрать</button>
+          <span id="summary" class="muted"></span>
+        </div>
+      </div>
+      <div class="row">
+        <label>Фильтр по тексту</label>
+        <input id="search" placeholder="поиск в message/raw..." style="padding:8px;border-radius:8px;border:1px solid #263042;background:#0e1626;color:#e2e8f0;" />
+      </div>
+    </div>
+
+    <div id="results" class="list"></div>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById('file');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const results = document.getElementById('results');
+    const summary = document.getElementById('summary');
+    const search = document.getElementById('search');
+
+    let lastEntries = [];
+
+    fileInput.addEventListener('change', () => {
+      uploadBtn.disabled = !fileInput.files?.length;
+      // Не очищаем предыдущие результаты намеренно
+      summary.textContent = '';
+    });
+
+    uploadBtn.addEventListener('click', async () => {
+      if (!fileInput.files?.length) return;
+      const fd = new FormData();
+      fd.append('file', fileInput.files[0]);
+      uploadBtn.disabled = true; summary.textContent = 'Загрузка...';
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        const newEntries = (data && data.entries) || [];
+        lastEntries = lastEntries.concat(newEntries);
+        const src = (data && data.source_filename) || (fileInput.files[0] && fileInput.files[0].name) || '';
+        summary.textContent = `Добавлено: ${newEntries.length} из файла ${src}. Всего: ${lastEntries.length}`;
+        append(newEntries);
+      } catch (e) {
+        console.error(e);
+        summary.textContent = 'Ошибка загрузки';
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    });
+
+    search.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      if (!q) { render(lastEntries); return; }
+      render(lastEntries.filter(e =>
+        (e.message && String(e.message).toLowerCase().includes(q)) ||
+        (e.raw && String(e.raw).toLowerCase().includes(q))
+      ));
+    });
+
+    function render(items) {
+      results.innerHTML = '';
+      append(items);
+    }
+
+    function append(items) {
+      for (const e of items) {
+        results.appendChild(renderItem(e));
+      }
+    }
+
+    function renderItem(e) {
+      const item = document.createElement('div');
+      item.className = 'item';
+      const lvl = (e.level || 'info').toLowerCase();
+      const section = e.tf_section ? `${e.tf_section}${e.tf_section_boundary ? ' • ' + e.tf_section_boundary : ''}` : '';
+      const src = e.source_filename ? `<span class="badge">${escapeHtml(e.source_filename)}</span>` : '';
+      const invalid = e.invalid ? `<span class="badge" style="border-color:#7f1d1d;color:#fca5a5">INVALID</span>` : '';
+      item.innerHTML = `
+        <div class="item-header" data-toggle>
+          <div class="time">${e.timestamp || ''}</div>
+          <div class="level ${lvl}">${lvl}</div>
+          <div class="section">${section} ${invalid}</div>
+          <div class="msg">${escapeHtml(e.message || '')}</div>
+          <div class="filename">${src}</div>
+        </div>
+        <div class="details" hidden>
+          <div class="details-grid">
+            <div>
+              <div class="kv">
+            <div class="muted">invalid</div><div>${e.invalid ? 'true' : 'false'}</div>
+                <div class="muted">source</div><div>${displayOrDash(e.source_filename)}</div>
+                <div class="muted">tf_req_id</div><div>${displayOrDash(e.tf_req_id)}</div>
+                <div class="muted">module</div><div>${displayOrDash(e.module)}</div>
+                <div class="muted">caller</div><div>${displayOrDash(e.caller)}</div>
+                <div class="muted">tf_provider_addr</div><div>${displayOrDash(e.tf_provider_addr)}</div>
+                <div class="muted">tf_rpc</div><div>${displayOrDash(e.tf_rpc)}</div>
+                <div class="muted">tf_resource_type</div><div>${displayOrDash(e.tf_resource_type)}</div>
+                <div class="muted">tf_proto_version</div><div>${displayOrDash(e.tf_proto_version)}</div>
+            <div class="muted">HTTP Request</div><div>${renderCode(e.tf_http_req_body)}</div>
+            <div class="muted">HTTP Response</div><div>${renderCode(e.tf_http_res_body)}</div>
+              </div>
+            </div>
+            <div>
+              <div class="muted">raw</div>
+              ${renderRawPretty(e.raw, e.raw_pretty)}
+            </div>
+          </div>
+        </div>
+      `;
+      const header = item.querySelector('[data-toggle]');
+      const details = item.querySelector('.details');
+      header.addEventListener('click', () => {
+        const open = details.style.display === 'block';
+        details.style.display = open ? 'none' : 'block';
+        details.hidden = open;
+      });
+      return item;
+    }
+
+    function renderCode(body) {
+      if (!body) return '<span class="muted">—</span>';
+      try {
+        const obj = typeof body === 'string' ? JSON.parse(body) : body;
+        const pretty = JSON.stringify(obj, null, 2);
+        return `<pre class="code">${escapeHtml(pretty)}</pre>`;
+      } catch {
+        return `<pre class="code">${escapeHtml(String(body))}</pre>`;
+      }
+    }
+
+    function renderRawPretty(raw, raw_pretty) {
+      if (!raw && !raw_pretty) return '<span class="muted">—</span>';
+      const text = raw_pretty || (() => {
+        try { return JSON.stringify(JSON.parse(raw), null, 2); } catch { return raw || ''; }
+      })();
+      return `<pre class="code">${escapeHtml(text)}</pre>`;
+    }
+
+    function displayOrDash(value) {
+      const has = value !== undefined && value !== null && String(value).trim() !== '';
+      return has ? escapeHtml(String(value)) : '<span class="muted">—</span>';
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+  </script>
+</body>
+</html>
+
+
