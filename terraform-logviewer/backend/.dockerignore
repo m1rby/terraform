@@ -1,0 +1,17 @@
+# Python artifacts
+__pycache__/
+*.pyc
+.venv/
+
+# OS/editor
+.DS_Store
+*.log
+
+# Local data and samples (not needed in image)
+data/
+../../TerraformLogs/
+
+# Git
+.git/
+.gitignore
+
