@@ -54,15 +54,26 @@
     #searchText { outline: none; border: none; background: transparent; color: var(--text); font: inherit; min-width: 160px; flex: 1; height: var(--control-h); line-height: var(--control-h); }
 
     .toolbar { display: inline-grid; grid-auto-flow: column; gap: 8px; align-items: stretch; }
-    .icon-btn { height: var(--control-h); min-width: var(--control-h); display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; transition: background .15s ease, transform .06s ease; padding: 0 10px; color: var(--text); font-size: 12px; }
+    .icon-btn { height: var(--control-h); min-width: var(--control-h); display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; transition: background .15s ease, transform .06s ease; padding: 0 10px; color: var(--text); font-size: 12px; font-weight: 500; }
     .icon-btn:hover { background: #eef2ff; }
     .icon-btn:active { transform: translateY(1px); }
+    .icon-btn.active { background: #e8f0ff; border-color: var(--accent); }
     .icon-img { width: 18px; height: 18px; display: block; }
-    .toolbar-row { display: grid; grid-template-columns: auto auto; gap: 6px; align-items: stretch; }
+    .toolbar-row { display: grid; grid-template-columns: auto auto auto; gap: 6px; align-items: stretch; }
     .export-btn { height: var(--control-h); padding: 0 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px; min-width: 150px; display: inline-flex; align-items: center; justify-content: center; }
     .export-btn:hover { background: #eef2ff; }
+    .timeline-btn { height: var(--control-h); padding: 0 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px; min-width: 255px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s ease; }
+    .timeline-btn:hover { background: #eef2ff; }
 
     .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-muted); font-size: 12px; }
+    .summary-row { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+    .sort-calendar-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .2s ease; }
+    .sort-calendar-btn:hover { background: #eef2ff; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+    .sort-calendar-btn:active { transform: translateY(0); }
+    .sort-calendar-btn.active { background: #e8f0ff; border-color: var(--accent); }
+    .sort-calendar-btn img { width: 18px; height: 18px; display: block; opacity: 0.7; transition: opacity .2s ease; }
+    .sort-calendar-btn:hover img { opacity: 1; }
+    .sort-calendar-btn.active img { opacity: 1; }
     .list { display: grid; gap: 8px; margin-top: 14px; }
     .item { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
     .item-header { display: grid; grid-template-columns: 200px 90px 90px 1fr 220px 90px; gap: 8px; padding: 8px 12px; align-items: center; cursor: pointer; }
@@ -103,18 +114,48 @@
     .preset:hover { background:#e2e8f0; }
 
     /* Timeline panel */
-    .timeline-panel { position: fixed; right: 24px; top: 72px; left: 24px; bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); display: none; z-index: 45; padding: 12px; }
-    .timeline-header { display:flex; align-items:center; justify-content: space-between; padding-bottom:8px; border-bottom:1px solid var(--border); }
-    .timeline-body { height: calc(100% - 46px); overflow:auto; padding-top:10px; }
-    .gantt { display:grid; grid-template-columns: 240px 1fr; gap:8px; }
+    .timeline-panel { display: none; }
+    .timeline-page { display: none; padding: 20px; background: #f8fafc; min-height: calc(100vh - 120px); }
+    .timeline-page.active { display: block; }
+    .timeline-page-header { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between; }
+    .timeline-page-header h2 { margin: 0; font-size: 20px; font-weight: 600; color: #1e293b; }
+    .timeline-controls { display: flex; gap: 10px; align-items: center; }
+    .gantt-time-axis { display: flex; justify-content: space-between; padding: 8px 0; margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
+    .gantt-time-tick { font-size: 11px; color: #64748b; font-weight: 500; text-align: center; }
+    .timeline-body { overflow: auto; }
+    
+    .gantt-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .gantt-stat { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #2563eb; }
+    .gantt-stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 8px; font-weight: 500; }
+    .gantt-stat-value { font-size: 28px; font-weight: 700; color: #1e293b; }
+    
+    .gantt-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .gantt { display:grid; grid-template-columns: 280px 1fr; gap: 12px; align-items: center; }
     .gantt-row { display: contents; }
-    .gantt-label { padding:4px 6px; color: var(--text-muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .gantt-track { position: relative; height: 22px; background: var(--bg-muted); border:1px dashed var(--border); border-radius:6px; }
-    .gantt-bar { position:absolute; top:2px; height:18px; border-radius:6px; background: #93c5fd; }
-    .gantt-bar.warn { background:#fbbf24; }
-    .gantt-bar.error { background:#f87171; }
-    .gantt-bar.info { background:#86efac; }
-    .gantt-grid { position:absolute; inset:0; background-image: linear-gradient(to right, rgba(0,0,0,0.06) 1px, transparent 1px); background-size: 80px 100%; pointer-events:none; border-radius:6px; }
+    .gantt-label { padding: 10px 14px; color: #1e293b; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer; }
+    .gantt-label:hover { background: #e0e7ff; border-color: #a5b4fc; transform: translateX(4px); }
+    
+    .gantt-track { position: relative; height: 36px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: visible; }
+    .gantt-bar { position: absolute; top: 4px; height: 28px; border-radius: 6px; background: #3b82f6; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; padding: 0 8px; color: white; font-size: 11px; font-weight: 600; overflow: hidden; }
+    .gantt-bar:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59,130,246,0.3); z-index: 10; }
+    
+    .gantt-bar.warn { background: #f59e0b; }
+    .gantt-bar.warn:hover { box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
+    .gantt-bar.error { background: #ef4444; }
+    .gantt-bar.error:hover { box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+    .gantt-bar.info { background: #10b981; }
+    .gantt-bar.info:hover { box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+    .gantt-bar.trace { background: #8b5cf6; }
+    .gantt-bar.trace:hover { box-shadow: 0 4px 12px rgba(139,92,246,0.3); }
+    
+    .gantt-grid { position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, rgba(148,163,184,0.1) 0px, rgba(148,163,184,0.1) 1px, transparent 1px, transparent 100px); pointer-events: none; border-radius: 8px; }
+    
+    .gantt-tooltip { position: fixed; background: #1e293b; color: white; padding: 12px 16px; border-radius: 8px; font-size: 12px; pointer-events: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: none; max-width: 300px; }
+    .gantt-tooltip-title { font-weight: 600; font-size: 13px; margin-bottom: 8px; color: white; }
+    .gantt-tooltip-row { display: flex; justify-content: space-between; gap: 12px; margin: 4px 0; font-size: 12px; }
+    .gantt-tooltip-label { color: #cbd5e1; }
+    .gantt-tooltip-value { font-weight: 600; color: white; }
+    
 
     /* Rename modal */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,0.35); display: none; z-index: 70; }
@@ -136,9 +177,6 @@
         <h1>Terraform LogViewer</h1>
       </div>
       <div class="nav-spacer"></div>
-      <div class="nav-actions">
-        <button id="timelineBtn" class="icon-btn" title="Диаграмма Ганта">Диаграмма</button>
-      </div>
     </div>
   </header>
   <main>
@@ -155,16 +193,36 @@
           <input type="file" id="file" style="display:none" />
           <button id="uploadIcon" class="icon-btn" title="Загрузить логи"><img class="icon-img" src="images/upload.png" alt="upload"/></button>
           <div class="toolbar-row">
-            
             <button id="settingsIcon" class="icon-btn" title="Фильтры"><img class="icon-img" src="images/settings.png" alt="filters"/></button>
             <button id="exportBtn" class="export-btn" title="Экспорт JSON">EXPORT</button>
           </div>
         </div>
       </div>
-      <div class="muted" id="summary"></div>
+      <div class="summary-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="muted" id="summary"></div>
+          <button id="sortCalendarBtn" class="sort-calendar-btn" title="Сортировка по времени (клик для переключения)"><img src="images/sorting.png" alt="sort"/></button>
+        </div>
+        <button id="timelineBtn" class="timeline-btn" title="Диаграмма Ганта">СТАТИСТИКА</button>
+      </div>
     </div>
 
     <div id="results" class="list"></div>
+
+    <div id="timelinePage" class="timeline-page">
+      <div class="timeline-page-header">
+        <h2 id="timelinePageTitle">Диаграмма Ганта</h2>
+        <div class="timeline-controls">
+          <button id="timelineClose" class="btn-primary">Закрыть</button>
+        </div>
+      </div>
+      <div class="timeline-body">
+        <div id="ganttStats" class="gantt-stats"></div>
+        <div class="gantt-container">
+          <div id="gantt" class="gantt"></div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <div id="overlay" class="overlay"></div>
@@ -234,18 +292,7 @@
     </div>
   </div>
 
-  <div id="timelinePanel" class="timeline-panel" aria-hidden="true">
-    <div class="timeline-header">
-      <div class="muted">Диаграмма Ганта по текущей выборке</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button id="timelineRefresh" class="btn-secondary">Обновить</button>
-        <button id="timelineClose" class="btn-primary">Закрыть</button>
-      </div>
-    </div>
-    <div class="timeline-body">
-      <div id="gantt" class="gantt"></div>
-    </div>
-  </div>
+  <div id="ganttTooltip" class="gantt-tooltip"></div>
 
   <!-- Rename Tab Modal -->
   <div id="renameBackdrop" class="modal-backdrop"></div>
@@ -342,6 +389,7 @@
     const timelineRefresh = document.getElementById('timelineRefresh');
     const ganttEl = document.getElementById('gantt');
     const exportBtn = document.getElementById('exportBtn');
+    const sortCalendarBtn = document.getElementById('sortCalendarBtn');
 
     const results = document.getElementById('results');
     const summary = document.getElementById('summary');
@@ -364,12 +412,13 @@
     let activeTabId = null;
     let lastFiltered = [];
     let renamingTabId = null;
+    let sortOrder = 'desc'; // 'asc' | 'desc'
 
     async function loadTabs() {
       const all = await dbGetAll(STORE_TABS);
       if (!all.length) {
         const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-        const tab = { id, title: 'Вкладка 1', color: '#94a3b8', baseSummary: '', search: '', filters: { date: '', range: 'day', section: '', level: '', invalid: '', reqId: '', hideRead: '' }, readIds: [] };
+        const tab = { id, title: 'Вкладка 1', color: '#94a3b8', baseSummary: '', search: '', filters: { date: '', range: 'day', section: '', level: '', invalid: '', reqId: '', hideRead: '' }, readIds: [], sort: 'desc', showGantt: false };
         await dbPut(STORE_TABS, tab);
         await dbPut(STORE_ENTRIES, { id, entries: [] });
         return [tab];
@@ -448,7 +497,7 @@
       addBtn.addEventListener('click', async () => {
         const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
         const maxOrder = Math.max(0, ...all.map(t => typeof t.order === 'number' ? t.order : (t.createdAt || 0)));
-        const tab = { id, title: `Вкладка ${tabsEl.querySelectorAll('.tab').length + 1}`, color: '#94a3b8', baseSummary: '', search: '', filters: { date: '', range: 'day', section: '', level: '', invalid: '', reqId: '', hideRead: '' }, readIds: [], createdAt: Date.now(), order: maxOrder + 1 };
+        const tab = { id, title: `Вкладка ${tabsEl.querySelectorAll('.tab').length + 1}`, color: '#94a3b8', baseSummary: '', search: '', filters: { date: '', range: 'day', section: '', level: '', invalid: '', reqId: '', hideRead: '' }, readIds: [], sort: 'desc', showGantt: false, createdAt: Date.now(), order: maxOrder + 1 };
         await dbPut(STORE_TABS, tab);
         await dbPut(STORE_ENTRIES, { id, entries: [] });
         activeTabId = id; await renderTabs(); await hydrateFromTab(id);
@@ -481,6 +530,7 @@
       const tab = await dbGet(STORE_TABS, tabId);
       if (!tab) return;
       search.value = tab.search || '';
+      sortOrder = tab.sort || 'desc';
       fDate.value = (tab.filters && tab.filters.date) || '';
       fRange.value = (tab.filters && tab.filters.range) || 'day';
       fSection.value = (tab.filters && tab.filters.section) || '';
@@ -493,6 +543,27 @@
       readSet = new Set(tab.readIds || []);
       lastEntries = await loadEntries(tabId);
       applyFiltersAndRender();
+      updateSortButtonsUI();
+      updateGanttView();
+    }
+
+    function updateGanttView() {
+      if (!activeTabId) return;
+      dbGet(STORE_TABS, activeTabId).then(tab => {
+        const showGantt = tab && tab.showGantt;
+        if (showGantt) {
+          const tabTitle = tab ? tab.title : 'Вкладка';
+          timelinePageTitle.textContent = `Диаграмма для "${tabTitle}"`;
+          renderGanttFromCurrent();
+          resultsDiv.style.display = 'none';
+          panelDiv.style.display = 'none';
+          timelinePage.classList.add('active');
+        } else {
+          timelinePage.classList.remove('active');
+          resultsDiv.style.display = '';
+          panelDiv.style.display = '';
+        }
+      });
     }
 
     // ---------- UI events ----------
@@ -528,9 +599,42 @@
     settingsIcon.addEventListener('click', openDrawer);
     overlay.addEventListener('click', closeDrawer);
 
-    timelineBtn.addEventListener('click', () => { renderGanttFromCurrent(); timelinePanel.style.display='block'; });
-    timelineCloseBtn.addEventListener('click', () => { timelinePanel.style.display='none'; });
-    timelineRefresh.addEventListener('click', () => { renderGanttFromCurrent(); });
+    // sort button
+    function updateSortButtonsUI() {
+      if (sortCalendarBtn) {
+        sortCalendarBtn.classList.toggle('active', sortOrder === 'asc');
+        sortCalendarBtn.title = sortOrder === 'asc' ? 'Сортировка: сначала старые (↑)' : 'Сортировка: сначала новые (↓)';
+      }
+    }
+    async function saveSort() { if (!activeTabId) return; const tab = await dbGet(STORE_TABS, activeTabId); tab.sort = sortOrder; await saveTabMeta(tab); }
+    if (sortCalendarBtn) {
+      sortCalendarBtn.addEventListener('click', async () => {
+        sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+        updateSortButtonsUI();
+        await saveSort();
+        applyFiltersAndRender();
+      });
+    }
+
+    const timelinePage = document.getElementById('timelinePage');
+    const timelinePageTitle = document.getElementById('timelinePageTitle');
+    const resultsDiv = document.getElementById('results');
+    const panelDiv = document.querySelector('.panel');
+
+    timelineBtn.addEventListener('click', async () => {
+      if (!activeTabId) return;
+      const tab = await dbGet(STORE_TABS, activeTabId);
+      tab.showGantt = true;
+      await saveTabMeta(tab);
+      updateGanttView();
+    });
+    timelineCloseBtn.addEventListener('click', async () => {
+      if (!activeTabId) return;
+      const tab = await dbGet(STORE_TABS, activeTabId);
+      tab.showGantt = false;
+      await saveTabMeta(tab);
+      updateGanttView();
+    });
 
     datePresets.addEventListener('click', (e) => {
       const btn = e.target.closest('.preset');
@@ -600,11 +704,19 @@
         return true;
       });
 
-      render(filtered, getCurrentHighlight());
-      updateSummaryFound(filtered.length);
+      const sorted = filtered.slice().sort((a, b) => {
+        const ta = entryTimestampToDate(a);
+        const tb = entryTimestampToDate(b);
+        const da = ta ? ta.getTime() : 0;
+        const db = tb ? tb.getTime() : 0;
+        return sortOrder === 'asc' ? (da - db) : (db - da);
+      });
+
+      render(sorted, getCurrentHighlight());
+      updateSummaryFound(sorted.length);
       // обновим список req_id по текущим данным (без повторов)
-      updateReqIdSuggestions(filtered);
-      lastFiltered = filtered;
+      updateReqIdSuggestions(sorted);
+      lastFiltered = sorted;
     }
 
     function getCurrentHighlight() { const t = search.value.trim(); return t.length ? t : ''; }
@@ -714,9 +826,10 @@
     function escapeHtml(str) { return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
 
     // ======== Timeline (Gantt) ========
+    const ganttTooltip = document.getElementById('ganttTooltip');
+    const ganttStatsEl = document.getElementById('ganttStats');
+
     function renderGanttFromCurrent() {
-      // берем текущие отображённые элементы
-      // соберём данные так же, как в applyFiltersAndRender
       const text = search.value;
       const { from, to } = getRangeFromControls();
       const section = fSection.value || null;
@@ -737,41 +850,147 @@
         return true;
       });
 
-      // группировка по tf_req_id (или по tf_rpc если id нет)
+      // группировка по tf_req_id (пропускаем unknown)
       const groups = new Map();
       for (const e of filtered) {
-        const key = e.tf_req_id || e.rf_req_id || e.tf_rpc || 'unknown';
+        const key = e.tf_req_id || e.rf_req_id || e.tf_rpc;
+        if (!key || key === 'unknown') continue;
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(e);
       }
+
+      // статистика
+      const stats = { total: filtered.length, groups: groups.size, errors: 0, warns: 0, info: 0, trace: 0 };
+      for (const e of filtered) {
+        const lvl = (e.level || '').toLowerCase();
+        if (lvl === 'error') stats.errors++;
+        else if (lvl === 'warn') stats.warns++;
+        else if (lvl === 'info') stats.info++;
+        else if (lvl === 'trace') stats.trace++;
+      }
+
+      // рендер статистики
+      ganttStatsEl.innerHTML = `
+        <div class="gantt-stat"><div class="gantt-stat-label">Всего логов</div><div class="gantt-stat-value">${stats.total}</div></div>
+        <div class="gantt-stat"><div class="gantt-stat-label">Групп</div><div class="gantt-stat-value">${stats.groups}</div></div>
+        <div class="gantt-stat" style="border-left-color: #ef4444;"><div class="gantt-stat-label">Errors</div><div class="gantt-stat-value" style="color: #ef4444;">${stats.errors}</div></div>
+        <div class="gantt-stat" style="border-left-color: #f59e0b;"><div class="gantt-stat-label">Warnings</div><div class="gantt-stat-value" style="color: #f59e0b;">${stats.warns}</div></div>
+        <div class="gantt-stat" style="border-left-color: #10b981;"><div class="gantt-stat-label">Info</div><div class="gantt-stat-value" style="color: #10b981;">${stats.info}</div></div>
+        <div class="gantt-stat" style="border-left-color: #8b5cf6;"><div class="gantt-stat-label">Trace</div><div class="gantt-stat-value" style="color: #8b5cf6;">${stats.trace}</div></div>
+      `;
 
       // вычисление min/max времени
       const stamps = [];
       for (const arr of groups.values()) {
         for (const e of arr) { const d = entryTimestampToDate(e); if (d) stamps.push(d.getTime()); }
       }
-      if (!stamps.length) { ganttEl.innerHTML = '<div class="muted" style="padding:8px;">Нет данных для таймлайна</div>'; return; }
+      if (!stamps.length) { ganttEl.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;">Нет данных для диаграммы</div>'; return; }
       const minT = Math.min(...stamps), maxT = Math.max(...stamps);
       const span = Math.max(1, maxT - minT);
 
-      // рендер
+      // рендер временной оси
+      const timeAxisHtml = [];
+      const tickCount = 6;
+      for (let i = 0; i <= tickCount; i++) {
+        const t = minT + (span * i / tickCount);
+        const d = new Date(t);
+        const timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        timeAxisHtml.push(`<div class="gantt-time-tick">${timeStr}</div>`);
+      }
+      
       ganttEl.innerHTML = '';
-      for (const [key, arr] of groups.entries()) {
+      const timeAxis = document.createElement('div');
+      timeAxis.className = 'gantt-time-axis';
+      timeAxis.style.gridColumn = '2';
+      timeAxis.innerHTML = timeAxisHtml.join('');
+      ganttEl.appendChild(document.createElement('div')); // пустой элемент для первой колонки
+      ganttEl.appendChild(timeAxis);
+      const sortedGroups = Array.from(groups.entries()).sort((a, b) => {
+        const aStart = Math.min(...a[1].map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime()));
+        const bStart = Math.min(...b[1].map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime()));
+        return aStart - bStart;
+      });
+
+      for (const [key, arr] of sortedGroups) {
         const times = arr.map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime());
         const start = Math.min(...times), end = Math.max(...times);
+        const duration = end - start;
         const left = ((start - minT) / span) * 100;
-        const width = Math.max(1.5, ((end - start) / span) * 100);
-        const label = key;
-        const lvl = (arr.map(e => (e.level||'').toLowerCase()).includes('error')) ? 'error' : (arr.map(e => (e.level||'').toLowerCase()).includes('warn') ? 'warn' : 'info');
+        const width = Math.max(2, ((end - start) / span) * 100);
+        const label = key.length > 35 ? key.substring(0, 32) + '...' : key;
+        
+        // определение уровня по приоритету
+        const levels = arr.map(e => (e.level||'').toLowerCase());
+        let lvl = 'info';
+        if (levels.includes('error')) lvl = 'error';
+        else if (levels.includes('warn')) lvl = 'warn';
+        else if (levels.includes('trace')) lvl = 'trace';
+        else if (levels.includes('info')) lvl = 'info';
 
-        const rowLabel = document.createElement('div'); rowLabel.className = 'gantt-label'; rowLabel.textContent = label;
-        const track = document.createElement('div'); track.className = 'gantt-track';
-        const grid = document.createElement('div'); grid.className = 'gantt-grid'; track.appendChild(grid);
-        const bar = document.createElement('div'); bar.className = `gantt-bar ${lvl}`; bar.style.left = left + '%'; bar.style.width = width + '%';
-        bar.title = `${label} • ${new Date(start).toLocaleString()} → ${new Date(end).toLocaleString()}`;
-        bar.addEventListener('click', () => { fReqId.value = key; applyFiltersAndRender(); saveFilters(); });
+        const rowLabel = document.createElement('div');
+        rowLabel.className = 'gantt-label';
+        rowLabel.textContent = label;
+        rowLabel.title = key;
+        rowLabel.addEventListener('click', async () => { 
+          fReqId.value = key; 
+          applyFiltersAndRender(); 
+          saveFilters(); 
+          if (activeTabId) {
+            const tab = await dbGet(STORE_TABS, activeTabId);
+            tab.showGantt = false;
+            await saveTabMeta(tab);
+          }
+          updateGanttView();
+        });
+
+        const track = document.createElement('div');
+        track.className = 'gantt-track';
+        const grid = document.createElement('div');
+        grid.className = 'gantt-grid';
+        track.appendChild(grid);
+
+        const bar = document.createElement('div');
+        bar.className = `gantt-bar ${lvl}`;
+        bar.style.left = left + '%';
+        bar.style.width = width + '%';
+        
+        const durationMs = duration;
+        const durationText = durationMs < 1000 ? `${durationMs}ms` : `${(durationMs/1000).toFixed(2)}s`;
+        if (width > 8) bar.textContent = durationText;
+
+        bar.addEventListener('click', async () => { 
+          fReqId.value = key; 
+          applyFiltersAndRender(); 
+          saveFilters(); 
+          if (activeTabId) {
+            const tab = await dbGet(STORE_TABS, activeTabId);
+            tab.showGantt = false;
+            await saveTabMeta(tab);
+          }
+          updateGanttView();
+        });
+        
+        // tooltip
+        bar.addEventListener('mouseenter', (e) => {
+          ganttTooltip.innerHTML = `
+            <div class="gantt-tooltip-title">${escapeHtml(key)}</div>
+            <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Начало:</span><span class="gantt-tooltip-value">${new Date(start).toLocaleString('ru-RU')}</span></div>
+            <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Конец:</span><span class="gantt-tooltip-value">${new Date(end).toLocaleString('ru-RU')}</span></div>
+            <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Длительность:</span><span class="gantt-tooltip-value">${durationText}</span></div>
+            <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Логов:</span><span class="gantt-tooltip-value">${arr.length}</span></div>
+            <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Уровень:</span><span class="gantt-tooltip-value" style="color: ${lvl==='error'?'#fca5a5':lvl==='warn'?'#fcd34d':lvl==='trace'?'#c4b5fd':'#86efac'}">${lvl.toUpperCase()}</span></div>
+          `;
+          ganttTooltip.style.display = 'block';
+        });
+        bar.addEventListener('mousemove', (e) => {
+          ganttTooltip.style.left = (e.clientX + 15) + 'px';
+          ganttTooltip.style.top = (e.clientY + 15) + 'px';
+        });
+        bar.addEventListener('mouseleave', () => {
+          ganttTooltip.style.display = 'none';
+        });
+
         track.appendChild(bar);
-
         ganttEl.appendChild(rowLabel);
         ganttEl.appendChild(track);
       }
