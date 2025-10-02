@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package logviewer.plugin;
+
+// Сервис для плагинов обработки логов
+service LogPlugin {
+  // Фильтрация логов
+  rpc FilterLogs(FilterRequest) returns (FilterResponse);
+  
+  // Обработка/трансформация логов
+  rpc ProcessLogs(ProcessRequest) returns (ProcessResponse);
+  
+  // Агрегация логов (например, группировка ошибок)
+  rpc AggregateLogs(AggregateRequest) returns (AggregateResponse);
+  
+  // Получение метаданных плагина
+  rpc GetPluginInfo(PluginInfoRequest) returns (PluginInfo);
+}
+
+// Структура лог-записи
+message LogEntry {
+  string timestamp = 1;
+  string level = 2;
+  string message = 3;
+  string raw = 4;
+  string tf_req_id = 5;
+  string tf_section = 6;
+  string tf_rpc = 7;
+  string source_filename = 8;
+  bool invalid = 9;
+  map<string, string> extra_fields = 10;
+}
+
+// Запрос на фильтрацию
+message FilterRequest {
+  repeated LogEntry logs = 1;
+  map<string, string> filter_params = 2;
+}
+
+message FilterResponse {
+  repeated LogEntry filtered_logs = 1;
+  string filter_reason = 2;
+}
+
+// Запрос на обработку
+message ProcessRequest {
+  repeated LogEntry logs = 1;
+  map<string, string> process_params = 2;
+}
+
+message ProcessResponse {
+  repeated LogEntry processed_logs = 1;
+  map<string, string> metadata = 2;
+}
+
+// Запрос на агрегацию
+message AggregateRequest {
+  repeated LogEntry logs = 1;
+  string aggregation_type = 2; // "error_grouping", "time_series", etc.
+  map<string, string> agg_params = 3;
+}
+
+message AggregateResponse {
+  repeated AggregationResult results = 1;
+  map<string, string> summary = 2;
+}
+
+message AggregationResult {
+  string group_key = 1;
+  int32 count = 2;
+  repeated LogEntry sample_logs = 3;
+  map<string, string> metadata = 4;
+}
+
+// Информация о плагине
+message PluginInfoRequest {}
+
+message PluginInfo {
+  string name = 1;
+  string version = 2;
+  string description = 3;
+  repeated string capabilities = 4; // "filter", "process", "aggregate"
+  map<string, string> config_schema = 5;
+}

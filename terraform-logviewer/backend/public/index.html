@@ -46,7 +46,7 @@
     .tab .close:hover { background: #e2e8f0; }
     .tab-add { width: 28px; height: 28px; border-radius: 999px; border: 1px dashed var(--chip-border); background: var(--chip); color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 
-    .panel { display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: 0 1px 2px rgba(16,24,40,0.04); }
+    .panel { display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: 0 1px 2px rgba(16,24,40,0.04); position: sticky; top: 0; z-index: 20; }
     .panel-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
 
     .tokenbox { display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-muted); min-height: var(--control-h); }
@@ -112,6 +112,19 @@
     .presets { display: flex; gap: 6px; flex-wrap: wrap; }
     .preset { background: var(--chip); border:1px solid var(--chip-border); color: var(--text); padding:6px 10px; border-radius:999px; cursor:pointer; font-size:12px; }
     .preset:hover { background:#e2e8f0; }
+    
+    .quick-filter { padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; font-size: 12px; cursor: pointer; transition: all 0.2s ease; }
+    .quick-filter:hover { border-color: #2563eb; }
+    .quick-filter:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+    
+    .quick-filter-input { padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; font-size: 12px; width: 150px; transition: all 0.2s ease; }
+    .quick-filter-input:hover { border-color: #2563eb; }
+    .quick-filter-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+    .quick-filter-input::placeholder { color: #94a3b8; }
+    
+    .quick-reset-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid #fca5a5; background: #fee2e2; color: #dc2626; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+    .quick-reset-btn:hover { background: #fecaca; border-color: #f87171; transform: scale(1.05); }
+    .quick-reset-btn:active { transform: scale(0.95); }
 
     /* Timeline panel */
     .timeline-panel { display: none; }
@@ -120,8 +133,27 @@
     .timeline-page-header { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between; }
     .timeline-page-header h2 { margin: 0; font-size: 20px; font-weight: 600; color: #1e293b; }
     .timeline-controls { display: flex; gap: 10px; align-items: center; }
-    .gantt-time-axis { display: flex; justify-content: space-between; padding: 8px 0; margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
-    .gantt-time-tick { font-size: 11px; color: #64748b; font-weight: 500; text-align: center; }
+    .gantt-time-axis { position: relative; padding: 8px 0; margin-bottom: 12px; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; background: white; z-index: 5; height: 30px; }
+    .gantt-time-tick { position: absolute; font-size: 11px; color: #64748b; font-weight: 500; transform: translateX(-50%); white-space: nowrap; }
+    
+    .gantt-filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .gantt-select { padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; font-size: 12px; cursor: pointer; }
+    .gantt-checkbox { display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; }
+    .gantt-checkbox input { cursor: pointer; }
+    
+    .gantt-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; margin-bottom: 12px; }
+    .gantt-search-input { padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0; width: 300px; font-size: 13px; }
+    .gantt-legend { display: flex; gap: 16px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+    .legend-dot.error { background: #ef4444; }
+    .legend-dot.warn { background: #f59e0b; }
+    .legend-dot.info { background: #10b981; }
+    .legend-dot.trace { background: #8b5cf6; }
+    
+    .gantt-minimap { height: 80px; background: white; border-radius: 8px; margin-top: 12px; padding: 8px; border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
+    .gantt-minimap-bar { position: absolute; height: 4px; border-radius: 2px; top: 50%; transform: translateY(-50%); }
+    .gantt-minimap-viewport { position: absolute; border: 2px solid #2563eb; background: rgba(37, 99, 235, 0.1); height: 100%; cursor: move; }
     .timeline-body { overflow: auto; }
     
     .gantt-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -129,11 +161,13 @@
     .gantt-stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 8px; font-weight: 500; }
     .gantt-stat-value { font-size: 28px; font-weight: 700; color: #1e293b; }
     
-    .gantt-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .gantt { display:grid; grid-template-columns: 280px 1fr; gap: 12px; align-items: center; }
+    .gantt-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-height: 600px; overflow: auto; }
+    .gantt { display:grid; grid-template-columns: 280px 1fr; gap: 12px; align-items: center; min-width: 100%; }
     .gantt-row { display: contents; }
-    .gantt-label { padding: 10px 14px; color: #1e293b; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer; }
-    .gantt-label:hover { background: #e0e7ff; border-color: #a5b4fc; transform: translateX(4px); }
+    .gantt-label { padding: 10px 14px; color: #1e293b; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer; position: sticky; left: 0; z-index: 2; }
+    .gantt-label:hover { background: #e0e7ff; border-color: #a5b4fc; }
+    .gantt-label.highlighted { background: #fef3c7; border-left: 3px solid #f59e0b; }
+    .gantt-label-badge { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #e2e8f0; color: #64748b; padding: 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 600; }
     
     .gantt-track { position: relative; height: 36px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: visible; }
     .gantt-bar { position: absolute; top: 4px; height: 28px; border-radius: 6px; background: #3b82f6; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; padding: 0 8px; color: white; font-size: 11px; font-weight: 600; overflow: hidden; }
@@ -156,6 +190,33 @@
     .gantt-tooltip-label { color: #cbd5e1; }
     .gantt-tooltip-value { font-weight: 600; color: white; }
     
+    .zoom-controls { display: flex; gap: 6px; align-items: center; }
+    .zoom-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.2s ease; color: #1e293b; }
+    .zoom-btn:hover { background: #f1f5f9; border-color: #2563eb; }
+    .zoom-level { font-size: 14px; font-weight: 600; color: #1e293b; min-width: 50px; text-align: center; }
+
+    /* Drawer tabs */
+    .drawer-tabs { display: flex; gap: 4px; padding: 0 14px; border-bottom: 1px solid var(--border); background: var(--bg-muted); }
+    .drawer-tab { padding: 10px 16px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s ease; font-size: 13px; font-weight: 500; }
+    .drawer-tab:hover { color: var(--text); background: rgba(0,0,0,0.02); }
+    .drawer-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .drawer-content { display: none; }
+    .drawer-content.active { display: block; }
+
+    /* Plugin list */
+    .plugin-list { display: grid; gap: 8px; margin-top: 12px; }
+    .plugin-item { padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); display: grid; gap: 6px; }
+    .plugin-item-header { display: flex; align-items: center; justify-content: space-between; }
+    .plugin-name { font-weight: 600; color: var(--text); }
+    .plugin-status { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+    .plugin-status.online { background: #d1fae5; color: #065f46; }
+    .plugin-status.offline { background: #fee2e2; color: #991b1b; }
+    .plugin-info { font-size: 12px; color: var(--text-muted); }
+    .plugin-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .plugin-btn { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px; cursor: pointer; transition: all .15s ease; }
+    .plugin-btn:hover { background: #eef2ff; border-color: var(--accent); }
+    .plugin-btn.danger { color: #dc2626; }
+    .plugin-btn.danger:hover { background: #fee2e2; border-color: #dc2626; }
 
     /* Rename modal */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,0.35); display: none; z-index: 70; }
@@ -167,6 +228,7 @@
     #renameInput { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
     .color-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
     #renameColor { width: 44px; height: 32px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+    .form-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -199,9 +261,31 @@
         </div>
       </div>
       <div class="summary-row">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div class="muted" id="summary"></div>
           <button id="sortCalendarBtn" class="sort-calendar-btn" title="Сортировка по времени (клик для переключения)"><img src="images/sorting.png" alt="sort"/></button>
+          
+          <div style="display: flex; gap: 6px; align-items: center; margin-left: 12px;">
+            <select id="quickLevel" class="quick-filter" title="Быстрый фильтр по уровню">
+              <option value="">Все уровни</option>
+              <option value="error">Error</option>
+              <option value="warn">Warning</option>
+              <option value="info">Info</option>
+              <option value="debug">Debug</option>
+              <option value="trace">Trace</option>
+            </select>
+            
+            <select id="quickSection" class="quick-filter" title="Быстрый фильтр по секции">
+              <option value="">Все секции</option>
+              <option value="plan">Plan</option>
+              <option value="apply">Apply</option>
+            </select>
+            
+            <input id="quickReqId" class="quick-filter-input" list="quickReqIdList" placeholder="Request ID..." title="Быстрый поиск по ID" />
+            <datalist id="quickReqIdList"></datalist>
+            
+            <button id="quickReset" class="quick-reset-btn" title="Сбросить все фильтры">✕</button>
+          </div>
         </div>
         <button id="timelineBtn" class="timeline-btn" title="Диаграмма Ганта">СТАТИСТИКА</button>
       </div>
@@ -213,24 +297,65 @@
       <div class="timeline-page-header">
         <h2 id="timelinePageTitle">Диаграмма Ганта</h2>
         <div class="timeline-controls">
+          <div class="gantt-filters">
+            <select id="ganttGroupBy" class="gantt-select">
+              <option value="tf_req_id">Группировка: Request ID</option>
+              <option value="tf_section">Группировка: Секция</option>
+              <option value="level">Группировка: Уровень</option>
+            </select>
+            <select id="ganttSortBy" class="gantt-select">
+              <option value="start">Сортировка: По началу</option>
+              <option value="duration">Сортировка: По длительности</option>
+              <option value="count">Сортировка: По количеству</option>
+            </select>
+            <label class="gantt-checkbox">
+              <input type="checkbox" id="ganttShowErrors" checked />
+              <span>Показать errors</span>
+            </label>
+            <label class="gantt-checkbox">
+              <input type="checkbox" id="ganttShowWarns" checked />
+              <span>Показать warnings</span>
+            </label>
+          </div>
+          <div class="zoom-controls">
+            <button id="zoomOut" class="zoom-btn" title="Уменьшить">−</button>
+            <span id="zoomLevel" class="zoom-level">1.0x</span>
+            <button id="zoomReset" class="zoom-btn" title="Сбросить">⊙</button>
+            <button id="zoomIn" class="zoom-btn" title="Увеличить">+</button>
+          </div>
           <button id="timelineClose" class="btn-primary">Закрыть</button>
         </div>
       </div>
       <div class="timeline-body">
         <div id="ganttStats" class="gantt-stats"></div>
+        <div class="gantt-toolbar">
+          <div class="gantt-search">
+            <input type="text" id="ganttSearch" placeholder="Поиск по ID..." class="gantt-search-input" />
+          </div>
+          <div class="gantt-legend">
+            <span class="legend-item"><span class="legend-dot error"></span>Error</span>
+            <span class="legend-item"><span class="legend-dot warn"></span>Warning</span>
+            <span class="legend-item"><span class="legend-dot info"></span>Info</span>
+            <span class="legend-item"><span class="legend-dot trace"></span>Trace</span>
+          </div>
+        </div>
         <div class="gantt-container">
           <div id="gantt" class="gantt"></div>
         </div>
+        <div class="gantt-minimap" id="ganttMinimap"></div>
       </div>
     </div>
   </main>
 
   <div id="overlay" class="overlay"></div>
   <div id="filtersDrawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="filtersTitle">
-    <header>
-      <div class="muted" id="filtersTitle">Фильтры</div>
-    </header>
-    <main>
+    <div class="drawer-tabs">
+      <button class="drawer-tab active" data-tab="filters">Фильтры</button>
+      <button class="drawer-tab" data-tab="plugins">Плагины</button>
+    </div>
+    
+    <div class="drawer-content active" id="filtersContent">
+      <main>
       <div class="presets" id="datePresets">
         <button class="preset" data-preset="today">Сегодня</button>
         <button class="preset" data-preset="yesterday">Вчера</button>
@@ -285,10 +410,43 @@
         <div class="muted">Убрать отмеченные</div>
         <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="fHideRead" /> <span class="muted">скрыть логи с отметкой "Прочитано"</span></label>
       </div>
-    </main>
-    <div class="actions">
+      </main>
+    </div>
+    
+    <div class="drawer-content" id="pluginsContent">
+      <main>
+      <div style="padding: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div class="muted">Список плагинов</div>
+          <button id="addPluginBtn" class="btn-primary">Добавить</button>
+        </div>
+        <div id="pluginsList" class="plugin-list"></div>
+        
+        <div id="addPluginForm" style="display: none; margin-top: 16px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-muted);">
+          <div class="muted" style="margin-bottom: 12px; font-weight: 600;">Добавить плагин</div>
+          <div class="field">
+            <div class="muted">Название</div>
+            <input id="pluginName" class="form-input" placeholder="error-aggregator" />
+          </div>
+          <div class="field">
+            <div class="muted">Адрес (host:port)</div>
+            <input id="pluginAddress" class="form-input" placeholder="localhost:50051" />
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <button id="savePluginBtn" class="btn-primary">Сохранить</button>
+            <button id="cancelPluginBtn" class="btn-secondary">Отмена</button>
+          </div>
+        </div>
+      </div>
+      </main>
+    </div>
+    
+    <div class="actions" id="filtersActions">
       <button id="filtersReset" class="btn-secondary">Сбросить</button>
       <button id="filtersApply" class="btn-primary">Применить</button>
+    </div>
+    <div class="actions" id="pluginsActions" style="display: none;">
+      <button id="pluginsClose" class="btn-primary">Закрыть</button>
     </div>
   </div>
 
@@ -594,10 +752,275 @@
       updateReqIdSuggestions();
     });
 
-    function openDrawer() { overlay.style.display='block'; drawer.style.display='block'; }
+    // Quick filters
+    const quickLevel = document.getElementById('quickLevel');
+    const quickSection = document.getElementById('quickSection');
+    const quickReqId = document.getElementById('quickReqId');
+    const quickReset = document.getElementById('quickReset');
+
+    if (quickLevel) {
+      quickLevel.addEventListener('change', () => {
+        fLevel.value = quickLevel.value;
+        applyFiltersAndRender();
+        saveFilters();
+      });
+    }
+
+    if (quickSection) {
+      quickSection.addEventListener('change', () => {
+        fSection.value = quickSection.value;
+        applyFiltersAndRender();
+        saveFilters();
+      });
+    }
+
+    if (quickReqId) {
+      quickReqId.addEventListener('input', () => {
+        fReqId.value = quickReqId.value;
+        applyFiltersAndRender();
+      });
+      quickReqId.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          applyFiltersAndRender();
+        }
+      });
+    }
+
+    if (quickReset) {
+      quickReset.addEventListener('click', async () => {
+        // Сбрасываем все фильтры
+        fSection.value = '';
+        fLevel.value = '';
+        fInvalid.value = '';
+        fDate.value = '';
+        fRange.value = 'day';
+        fReqId.value = '';
+        fHideRead.checked = false;
+        search.value = '';
+        
+        // Сбрасываем быстрые фильтры
+        quickLevel.value = '';
+        quickSection.value = '';
+        quickReqId.value = '';
+        
+        // Применяем и сохраняем
+        await saveFilters();
+        await saveSearch();
+        applyFiltersAndRender();
+      });
+    }
+
+    function openDrawer() { overlay.style.display='block'; drawer.style.display='block'; loadPlugins(); }
     function closeDrawer() { overlay.style.display='none'; drawer.style.display='none'; }
     settingsIcon.addEventListener('click', openDrawer);
     overlay.addEventListener('click', closeDrawer);
+
+    // Drawer tabs
+    const drawerTabs = document.querySelectorAll('.drawer-tab');
+    const drawerContents = document.querySelectorAll('.drawer-content');
+    
+    const filtersActions = document.getElementById('filtersActions');
+    const pluginsActions = document.getElementById('pluginsActions');
+    const pluginsCloseBtn = document.getElementById('pluginsClose');
+
+    drawerTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.getAttribute('data-tab');
+        
+        // Update tabs
+        drawerTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Update content
+        drawerContents.forEach(c => c.classList.remove('active'));
+        if (tabName === 'filters') {
+          document.getElementById('filtersContent').classList.add('active');
+          filtersActions.style.display = 'flex';
+          pluginsActions.style.display = 'none';
+        } else if (tabName === 'plugins') {
+          document.getElementById('pluginsContent').classList.add('active');
+          filtersActions.style.display = 'none';
+          pluginsActions.style.display = 'flex';
+          loadPlugins();
+        }
+      });
+    });
+
+    if (pluginsCloseBtn) {
+      pluginsCloseBtn.addEventListener('click', closeDrawer);
+    }
+
+    // ========== Plugins Management ==========
+    const pluginsList = document.getElementById('pluginsList');
+    const addPluginBtn = document.getElementById('addPluginBtn');
+    const addPluginForm = document.getElementById('addPluginForm');
+    const pluginNameInput = document.getElementById('pluginName');
+    const pluginAddressInput = document.getElementById('pluginAddress');
+    const savePluginBtn = document.getElementById('savePluginBtn');
+    const cancelPluginBtn = document.getElementById('cancelPluginBtn');
+
+    addPluginBtn.addEventListener('click', () => {
+      addPluginForm.style.display = 'block';
+      pluginNameInput.value = '';
+      pluginAddressInput.value = '';
+    });
+
+    cancelPluginBtn.addEventListener('click', () => {
+      addPluginForm.style.display = 'none';
+    });
+
+    savePluginBtn.addEventListener('click', async () => {
+      const name = pluginNameInput.value.trim();
+      const address = pluginAddressInput.value.trim();
+      
+      if (!name || !address) {
+        alert('Заполните все поля');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/plugins/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, address, enabled: true })
+        });
+
+        if (response.ok) {
+          addPluginForm.style.display = 'none';
+          loadPlugins();
+          alert(`Плагин "${name}" зарегистрирован!`);
+        } else {
+          const error = await response.text();
+          alert(`Ошибка: ${error}`);
+        }
+      } catch (err) {
+        alert(`Ошибка подключения: ${err.message}`);
+      }
+    });
+
+    async function loadPlugins() {
+      try {
+        const response = await fetch('/api/plugins');
+        const data = await response.json();
+        const plugins = data.plugins || [];
+
+        if (plugins.length === 0) {
+          pluginsList.innerHTML = '<div class="muted" style="padding: 20px; text-align: center;">Нет зарегистрированных плагинов</div>';
+          return;
+        }
+
+        pluginsList.innerHTML = plugins.map(plugin => `
+          <div class="plugin-item">
+            <div class="plugin-item-header">
+              <div class="plugin-name">${escapeHtml(plugin.name)}</div>
+              <div class="plugin-status ${plugin.enabled ? 'online' : 'offline'}">
+                ${plugin.enabled ? '● Online' : '○ Offline'}
+              </div>
+            </div>
+            <div class="plugin-info">
+              ${escapeHtml(plugin.address)} • ${(plugin.capabilities || []).join(', ')}
+            </div>
+            <div class="plugin-actions">
+              <button class="plugin-btn" onclick="usePluginFilter('${escapeHtml(plugin.name)}')">Фильтровать</button>
+              <button class="plugin-btn" onclick="usePluginAggregate('${escapeHtml(plugin.name)}')">Агрегировать</button>
+              <button class="plugin-btn danger" onclick="deletePlugin('${escapeHtml(plugin.name)}')">Удалить</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        pluginsList.innerHTML = '<div class="muted" style="padding: 20px; text-align: center; color: #dc2626;">Ошибка загрузки плагинов</div>';
+        console.error('Error loading plugins:', err);
+      }
+    }
+
+    window.usePluginFilter = async function(pluginName) {
+      if (!lastEntries.length) {
+        alert('Сначала загрузите логи');
+        return;
+      }
+
+      try {
+        summary.textContent = `Фильтрация через ${pluginName}...`;
+        
+        const response = await fetch(`/api/plugins/${pluginName}/filter`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ logs: lastEntries })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          lastEntries = data.filtered_logs || [];
+          applyFiltersAndRender();
+          summary.textContent = `Отфильтровано через ${pluginName}: ${lastEntries.length} логов`;
+          closeDrawer();
+        } else {
+          alert('Ошибка фильтрации');
+        }
+      } catch (err) {
+        alert(`Ошибка: ${err.message}`);
+      }
+    };
+
+    window.usePluginAggregate = async function(pluginName) {
+      if (!lastEntries.length) {
+        alert('Сначала загрузите логи');
+        return;
+      }
+
+      try {
+        summary.textContent = `Агрегация через ${pluginName}...`;
+        
+        const response = await fetch(`/api/plugins/${pluginName}/aggregate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            logs: lastEntries,
+            aggregation_type: 'error_grouping',
+            agg_params: { min_count: '2', pattern_matching: 'true' }
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const results = data.aggregation_results || [];
+          
+          // Показываем результаты
+          let message = `Найдено ${results.length} групп ошибок:\n\n`;
+          results.slice(0, 5).forEach((r, i) => {
+            message += `${i + 1}. ${r.group_key} (${r.count} раз)\n`;
+          });
+          
+          alert(message);
+          summary.textContent = `Агрегация завершена: ${results.length} групп`;
+          closeDrawer();
+        } else {
+          alert('Ошибка агрегации');
+        }
+      } catch (err) {
+        alert(`Ошибка: ${err.message}`);
+      }
+    };
+
+    window.deletePlugin = async function(pluginName) {
+      if (!confirm(`Удалить плагин "${pluginName}"?`)) return;
+
+      try {
+        const response = await fetch(`/api/plugins/${pluginName}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          loadPlugins();
+          alert(`Плагин "${pluginName}" удалён`);
+        } else {
+          alert('Ошибка удаления плагина');
+        }
+      } catch (err) {
+        alert(`Ошибка: ${err.message}`);
+      }
+    };
 
     // sort button
     function updateSortButtonsUI() {
@@ -826,8 +1249,57 @@
     function escapeHtml(str) { return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
 
     // ======== Timeline (Gantt) ========
+    let ganttZoom = 1;
     const ganttTooltip = document.getElementById('ganttTooltip');
     const ganttStatsEl = document.getElementById('ganttStats');
+    const zoomInBtn = document.getElementById('zoomIn');
+    const zoomOutBtn = document.getElementById('zoomOut');
+    const zoomResetBtn = document.getElementById('zoomReset');
+
+    // Gantt controls
+    let ganttGroupBy = 'tf_req_id';
+    let ganttSortBy = 'start';
+    let ganttShowErrors = true;
+    let ganttShowWarns = true;
+    let ganttSearchTerm = '';
+
+    const ganttGroupBySelect = document.getElementById('ganttGroupBy');
+    const ganttSortBySelect = document.getElementById('ganttSortBy');
+    const ganttShowErrorsCheck = document.getElementById('ganttShowErrors');
+    const ganttShowWarnsCheck = document.getElementById('ganttShowWarns');
+    const ganttSearchInput = document.getElementById('ganttSearch');
+
+    if (ganttGroupBySelect) ganttGroupBySelect.addEventListener('change', () => { ganttGroupBy = ganttGroupBySelect.value; renderGanttFromCurrent(); });
+    if (ganttSortBySelect) ganttSortBySelect.addEventListener('change', () => { ganttSortBy = ganttSortBySelect.value; renderGanttFromCurrent(); });
+    if (ganttShowErrorsCheck) ganttShowErrorsCheck.addEventListener('change', () => { ganttShowErrors = ganttShowErrorsCheck.checked; renderGanttFromCurrent(); });
+    if (ganttShowWarnsCheck) ganttShowWarnsCheck.addEventListener('change', () => { ganttShowWarns = ganttShowWarnsCheck.checked; renderGanttFromCurrent(); });
+    if (ganttSearchInput) ganttSearchInput.addEventListener('input', () => { ganttSearchTerm = ganttSearchInput.value.toLowerCase(); renderGanttFromCurrent(); });
+
+    const zoomLevelSpan = document.getElementById('zoomLevel');
+    
+    function updateZoomDisplay() {
+      if (zoomLevelSpan) {
+        zoomLevelSpan.textContent = `${ganttZoom.toFixed(1)}x`;
+      }
+    }
+    
+    if (zoomInBtn) zoomInBtn.addEventListener('click', () => { 
+      const step = ganttZoom < 5 ? 0.5 : ganttZoom < 20 ? 1 : 5;
+      ganttZoom = Math.min(50, ganttZoom + step); 
+      updateZoomDisplay();
+      renderGanttFromCurrent(); 
+    });
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { 
+      const step = ganttZoom <= 5 ? 0.5 : ganttZoom <= 20 ? 1 : 5;
+      ganttZoom = Math.max(0.25, ganttZoom - step); 
+      updateZoomDisplay();
+      renderGanttFromCurrent(); 
+    });
+    if (zoomResetBtn) zoomResetBtn.addEventListener('click', () => { 
+      ganttZoom = 1; 
+      updateZoomDisplay();
+      renderGanttFromCurrent(); 
+    });
 
     function renderGanttFromCurrent() {
       const text = search.value;
@@ -850,13 +1322,36 @@
         return true;
       });
 
-      // группировка по tf_req_id (пропускаем unknown)
+      // группировка по выбранному полю
       const groups = new Map();
       for (const e of filtered) {
-        const key = e.tf_req_id || e.rf_req_id || e.tf_rpc;
+        let key;
+        if (ganttGroupBy === 'tf_req_id') {
+          key = e.tf_req_id || e.rf_req_id || e.tf_rpc;
+        } else if (ganttGroupBy === 'tf_section') {
+          key = e.tf_section || 'unknown';
+        } else if (ganttGroupBy === 'level') {
+          key = e.level || 'unknown';
+        }
+        
         if (!key || key === 'unknown') continue;
+        
+        // Фильтр по уровню
+        const lvl = (e.level || '').toLowerCase();
+        if (!ganttShowErrors && lvl === 'error') continue;
+        if (!ganttShowWarns && lvl === 'warn') continue;
+        
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(e);
+      }
+      
+      // Поиск по ключу
+      if (ganttSearchTerm) {
+        for (const [key, arr] of Array.from(groups.entries())) {
+          if (!key.toLowerCase().includes(ganttSearchTerm)) {
+            groups.delete(key);
+          }
+        }
       }
 
       // статистика
@@ -888,35 +1383,68 @@
       const minT = Math.min(...stamps), maxT = Math.max(...stamps);
       const span = Math.max(1, maxT - minT);
 
-      // рендер временной оси
-      const timeAxisHtml = [];
-      const tickCount = 6;
-      for (let i = 0; i <= tickCount; i++) {
-        const t = minT + (span * i / tickCount);
-        const d = new Date(t);
-        const timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        timeAxisHtml.push(`<div class="gantt-time-tick">${timeStr}</div>`);
-      }
-      
+      // рендер временной оси (количество меток зависит от зума)
       ganttEl.innerHTML = '';
       const timeAxis = document.createElement('div');
       timeAxis.className = 'gantt-time-axis';
       timeAxis.style.gridColumn = '2';
-      timeAxis.innerHTML = timeAxisHtml.join('');
+      timeAxis.style.width = `${100 * ganttZoom}%`;
+      
+      // Динамическое количество меток в зависимости от зума
+      const baseTickCount = Math.min(20, Math.max(10, Math.floor(span / 1000)));
+      const tickCount = Math.floor(baseTickCount * ganttZoom); // Больше меток при зуме
+      
+      for (let i = 0; i <= tickCount; i++) {
+        const t = minT + (span * i / tickCount);
+        const d = new Date(t);
+        const timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        const tick = document.createElement('div');
+        tick.className = 'gantt-time-tick';
+        tick.textContent = timeStr;
+        // Позиционируем метку по времени
+        const position = ((t - minT) / span) * 100;
+        tick.style.left = `${position}%`;
+        timeAxis.appendChild(tick);
+      }
+      
       ganttEl.appendChild(document.createElement('div')); // пустой элемент для первой колонки
       ganttEl.appendChild(timeAxis);
+      // Сортировка групп
       const sortedGroups = Array.from(groups.entries()).sort((a, b) => {
-        const aStart = Math.min(...a[1].map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime()));
-        const bStart = Math.min(...b[1].map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime()));
-        return aStart - bStart;
+        if (ganttSortBy === 'start') {
+          const aStart = Math.min(...a[1].map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime()));
+          const bStart = Math.min(...b[1].map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime()));
+          return aStart - bStart;
+        } else if (ganttSortBy === 'duration') {
+          const aTimes = a[1].map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime());
+          const bTimes = b[1].map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime());
+          const aDuration = Math.max(...aTimes) - Math.min(...aTimes);
+          const bDuration = Math.max(...bTimes) - Math.min(...bTimes);
+          return bDuration - aDuration; // от большего к меньшему
+        } else if (ganttSortBy === 'count') {
+          return b[1].length - a[1].length; // от большего к меньшему
+        }
+        return 0;
       });
 
       for (const [key, arr] of sortedGroups) {
         const times = arr.map(e => entryTimestampToDate(e)).filter(Boolean).map(d => d.getTime());
+        if (!times.length) continue;
+        
         const start = Math.min(...times), end = Math.max(...times);
         const duration = end - start;
+        
+        // Позиция и ширина бара (БЕЗ зума - track уже масштабирован)
         const left = ((start - minT) / span) * 100;
-        const width = Math.max(2, ((end - start) / span) * 100);
+        let width = ((duration) / span) * 100;
+        
+        // Минимальная ширина для видимости
+        // Для мгновенных событий (duration = 0) показываем маленький маркер
+        if (duration === 0 || width < 0.05) {
+          width = 0.1; // Очень маленький маркер для мгновенных событий
+        }
+        
         const label = key.length > 35 ? key.substring(0, 32) + '...' : key;
         
         // определение уровня по приоритету
@@ -929,8 +1457,18 @@
 
         const rowLabel = document.createElement('div');
         rowLabel.className = 'gantt-label';
+        if (ganttSearchTerm && key.toLowerCase().includes(ganttSearchTerm)) {
+          rowLabel.classList.add('highlighted');
+        }
         rowLabel.textContent = label;
         rowLabel.title = key;
+        
+        // Добавляем бейдж с количеством логов
+        const badge = document.createElement('span');
+        badge.className = 'gantt-label-badge';
+        badge.textContent = arr.length;
+        rowLabel.appendChild(badge);
+        
         rowLabel.addEventListener('click', async () => { 
           fReqId.value = key; 
           applyFiltersAndRender(); 
@@ -945,6 +1483,7 @@
 
         const track = document.createElement('div');
         track.className = 'gantt-track';
+        track.style.width = `${100 * ganttZoom}%`;
         const grid = document.createElement('div');
         grid.className = 'gantt-grid';
         track.appendChild(grid);
@@ -956,7 +1495,14 @@
         
         const durationMs = duration;
         const durationText = durationMs < 1000 ? `${durationMs}ms` : `${(durationMs/1000).toFixed(2)}s`;
-        if (width > 8) bar.textContent = durationText;
+        
+        // Показываем длительность если бар достаточно широкий
+        const barWidthPx = (width / 100) * ganttEl.offsetWidth;
+        if (barWidthPx > 50) {
+          bar.textContent = durationText;
+        } else if (barWidthPx > 20 && durationMs === 0) {
+          bar.textContent = '•'; // Точка для мгновенных событий
+        }
 
         bar.addEventListener('click', async () => { 
           fReqId.value = key; 
@@ -1003,10 +1549,22 @@
         const idv = e && (e.tf_req_id || e.rf_req_id);
         if (idv && String(idv).trim()) set.add(String(idv));
       }
+      
+      // Обновляем оба datalist (в фильтрах и быстрый)
+      const quickReqIdList = document.getElementById('quickReqIdList');
       reqIdList.innerHTML = '';
+      if (quickReqIdList) quickReqIdList.innerHTML = '';
+      
       for (const id of Array.from(set).sort()) {
         const opt = document.createElement('option');
-        opt.value = id; reqIdList.appendChild(opt);
+        opt.value = id;
+        reqIdList.appendChild(opt);
+        
+        if (quickReqIdList) {
+          const opt2 = document.createElement('option');
+          opt2.value = id;
+          quickReqIdList.appendChild(opt2);
+        }
       }
     }
 
