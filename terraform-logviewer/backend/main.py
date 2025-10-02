@@ -6,6 +6,7 @@ from pathlib import Path
 from parsers import parse_json_lines
 from plugin_manager import plugin_manager, PluginConfig
 from typing import List, Dict, Optional
+import os
 
 app = FastAPI(title="Terraform LogViewer - Backend")
 
@@ -26,13 +27,9 @@ app.mount("/ui", StaticFiles(directory=str(STATIC_DIR), html=True), name="static
 @app.on_event("startup")
 async def startup_event():
     """Инициализация плагинов при старте"""
-    # Пример регистрации плагина (можно вынести в конфиг)
-    # plugin_manager.register_plugin(PluginConfig(
-    #     name="error-aggregator",
-    #     address="localhost:50051",
-    #     enabled=True
-    # ))
-    print("✓ Плагинная система инициализирована")
+    print("✓ Backend запущен")
+    print("✓ Плагинная система готова к подключению плагинов")
+    print("   Плагины можно зарегистрировать через UI или API")
 
 @app.on_event("shutdown")
 async def shutdown_event():

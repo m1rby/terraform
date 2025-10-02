@@ -164,7 +164,7 @@
     .gantt-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-height: 600px; overflow: auto; }
     .gantt { display:grid; grid-template-columns: 280px 1fr; gap: 12px; align-items: center; min-width: 100%; }
     .gantt-row { display: contents; }
-    .gantt-label { padding: 10px 14px; color: #1e293b; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer; position: sticky; left: 0; z-index: 2; }
+    .gantt-label { padding: 10px 14px; color: #1e293b; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s ease; cursor: pointer; position: sticky; left: 0; z-index: 2; max-width: 280px; box-sizing: border-box; }
     .gantt-label:hover { background: #e0e7ff; border-color: #a5b4fc; }
     .gantt-label.highlighted { background: #fef3c7; border-left: 3px solid #f59e0b; }
     .gantt-label-badge { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #e2e8f0; color: #64748b; padding: 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 600; }
@@ -172,6 +172,7 @@
     .gantt-track { position: relative; height: 36px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: visible; }
     .gantt-bar { position: absolute; top: 4px; height: 28px; border-radius: 6px; background: #3b82f6; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; padding: 0 8px; color: white; font-size: 11px; font-weight: 600; overflow: hidden; }
     .gantt-bar:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59,130,246,0.3); z-index: 10; }
+    .gantt-bar:active { transform: translateY(0px); }
     
     .gantt-bar.warn { background: #f59e0b; }
     .gantt-bar.warn:hover { box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
@@ -179,6 +180,8 @@
     .gantt-bar.error:hover { box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
     .gantt-bar.info { background: #10b981; }
     .gantt-bar.info:hover { box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+    .gantt-bar.debug { background: #3b82f6; }
+    .gantt-bar.debug:hover { box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
     .gantt-bar.trace { background: #8b5cf6; }
     .gantt-bar.trace:hover { box-shadow: 0 4px 12px rgba(139,92,246,0.3); }
     
@@ -336,6 +339,7 @@
             <span class="legend-item"><span class="legend-dot error"></span>Error</span>
             <span class="legend-item"><span class="legend-dot warn"></span>Warning</span>
             <span class="legend-item"><span class="legend-dot info"></span>Info</span>
+            <span class="legend-item"><span class="legend-dot" style="background: #3b82f6;"></span>Debug</span>
             <span class="legend-item"><span class="legend-dot trace"></span>Trace</span>
           </div>
         </div>
@@ -571,6 +575,7 @@
     let lastFiltered = [];
     let renamingTabId = null;
     let sortOrder = 'desc'; // 'asc' | 'desc'
+    let originalEntries = []; // Сохраняем оригинальные логи до фильтрации плагином
 
     async function loadTabs() {
       const all = await dbGetAll(STORE_TABS);
@@ -803,6 +808,9 @@
         quickLevel.value = '';
         quickSection.value = '';
         quickReqId.value = '';
+        
+        // Сбрасываем фильтры плагинов - возвращаем оригинальные логи
+        lastFiltered = [];
         
         // Применяем и сохраняем
         await saveFilters();
@@ -1262,6 +1270,7 @@
     let ganttShowErrors = true;
     let ganttShowWarns = true;
     let ganttSearchTerm = '';
+    let ganttDetailedView = null; // Хранит { requestId, logs } если открыта детальная диаграмма
 
     const ganttGroupBySelect = document.getElementById('ganttGroupBy');
     const ganttSortBySelect = document.getElementById('ganttSortBy');
@@ -1287,21 +1296,73 @@
       const step = ganttZoom < 5 ? 0.5 : ganttZoom < 20 ? 1 : 5;
       ganttZoom = Math.min(50, ganttZoom + step); 
       updateZoomDisplay();
-      renderGanttFromCurrent(); 
+      if (ganttDetailedView) {
+        showDetailedGantt(ganttDetailedView.requestId, ganttDetailedView.logs);
+      } else {
+        renderGanttFromCurrent();
+      }
     });
     if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { 
       const step = ganttZoom <= 5 ? 0.5 : ganttZoom <= 20 ? 1 : 5;
-      ganttZoom = Math.max(0.25, ganttZoom - step); 
+      ganttZoom = Math.max(1, ganttZoom - step); 
       updateZoomDisplay();
-      renderGanttFromCurrent(); 
+      if (ganttDetailedView) {
+        showDetailedGantt(ganttDetailedView.requestId, ganttDetailedView.logs);
+      } else {
+        renderGanttFromCurrent();
+      }
     });
     if (zoomResetBtn) zoomResetBtn.addEventListener('click', () => { 
       ganttZoom = 1; 
       updateZoomDisplay();
-      renderGanttFromCurrent(); 
+      if (ganttDetailedView) {
+        showDetailedGantt(ganttDetailedView.requestId, ganttDetailedView.logs);
+      } else {
+        renderGanttFromCurrent();
+      }
     });
 
+    // Зум по колесику мыши
+    const ganttContainer = document.querySelector('.gantt-container');
+    if (ganttContainer) {
+      ganttContainer.addEventListener('wheel', (e) => {
+        // Проверяем, что курсор над диаграммой
+        if (e.target.closest('.gantt-container')) {
+          e.preventDefault();
+          
+          // Определяем направление прокрутки
+          const delta = e.deltaY;
+          
+          if (delta < 0) {
+            // Прокрутка вверх - увеличение зума
+            const step = ganttZoom < 5 ? 0.5 : ganttZoom < 20 ? 1 : 5;
+            ganttZoom = Math.min(50, ganttZoom + step);
+          } else {
+            // Прокрутка вниз - уменьшение зума
+            const step = ganttZoom <= 5 ? 0.5 : ganttZoom <= 20 ? 1 : 5;
+            ganttZoom = Math.max(1, ganttZoom - step);
+          }
+          
+          updateZoomDisplay();
+          
+          // Если открыта детальная диаграмма - рендерим её, иначе общую
+          if (ganttDetailedView) {
+            showDetailedGantt(ganttDetailedView.requestId, ganttDetailedView.logs);
+          } else {
+            renderGanttFromCurrent();
+          }
+        }
+      }, { passive: false });
+    }
+
     function renderGanttFromCurrent() {
+      // Сбрасываем состояние детальной диаграммы
+      ganttDetailedView = null;
+      
+      // Восстанавливаем заголовок
+      const timelinePageTitle = document.getElementById('timelinePageTitle');
+      timelinePageTitle.textContent = 'Диаграмма Ганта';
+      
       const text = search.value;
       const { from, to } = getRangeFromControls();
       const section = fSection.value || null;
@@ -1355,12 +1416,13 @@
       }
 
       // статистика
-      const stats = { total: filtered.length, groups: groups.size, errors: 0, warns: 0, info: 0, trace: 0 };
+      const stats = { total: filtered.length, groups: groups.size, errors: 0, warns: 0, info: 0, debug: 0, trace: 0 };
       for (const e of filtered) {
         const lvl = (e.level || '').toLowerCase();
         if (lvl === 'error') stats.errors++;
         else if (lvl === 'warn') stats.warns++;
         else if (lvl === 'info') stats.info++;
+        else if (lvl === 'debug') stats.debug++;
         else if (lvl === 'trace') stats.trace++;
       }
 
@@ -1371,6 +1433,7 @@
         <div class="gantt-stat" style="border-left-color: #ef4444;"><div class="gantt-stat-label">Errors</div><div class="gantt-stat-value" style="color: #ef4444;">${stats.errors}</div></div>
         <div class="gantt-stat" style="border-left-color: #f59e0b;"><div class="gantt-stat-label">Warnings</div><div class="gantt-stat-value" style="color: #f59e0b;">${stats.warns}</div></div>
         <div class="gantt-stat" style="border-left-color: #10b981;"><div class="gantt-stat-label">Info</div><div class="gantt-stat-value" style="color: #10b981;">${stats.info}</div></div>
+        <div class="gantt-stat" style="border-left-color: #3b82f6;"><div class="gantt-stat-label">Debug</div><div class="gantt-stat-value" style="color: #3b82f6;">${stats.debug}</div></div>
         <div class="gantt-stat" style="border-left-color: #8b5cf6;"><div class="gantt-stat-label">Trace</div><div class="gantt-stat-value" style="color: #8b5cf6;">${stats.trace}</div></div>
       `;
 
@@ -1445,7 +1508,7 @@
           width = 0.1; // Очень маленький маркер для мгновенных событий
         }
         
-        const label = key.length > 35 ? key.substring(0, 32) + '...' : key;
+        const label = key.length > 30 ? key.substring(0, 27) + '...' : key;
         
         // определение уровня по приоритету
         const levels = arr.map(e => (e.level||'').toLowerCase());
@@ -1504,20 +1567,33 @@
           bar.textContent = '•'; // Точка для мгновенных событий
         }
 
-        bar.addEventListener('click', async () => { 
-          fReqId.value = key; 
-          applyFiltersAndRender(); 
-          saveFilters(); 
-          if (activeTabId) {
-            const tab = await dbGet(STORE_TABS, activeTabId);
-            tab.showGantt = false;
-            await saveTabMeta(tab);
+        bar.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          
+          // Drill-down: показываем детальную диаграмму для этого ID
+          if (ganttGroupBy === 'tf_req_id') {
+            // Переключаемся на группировку по отдельным логам
+            await showDetailedGantt(key, arr);
+          } else {
+            // Для других группировок - фильтруем и закрываем
+            fReqId.value = key; 
+            applyFiltersAndRender(); 
+            saveFilters(); 
+            if (activeTabId) {
+              const tab = await dbGet(STORE_TABS, activeTabId);
+              tab.showGantt = false;
+              await saveTabMeta(tab);
+            }
+            updateGanttView();
           }
-          updateGanttView();
         });
         
         // tooltip
         bar.addEventListener('mouseenter', (e) => {
+          const clickHint = ganttGroupBy === 'tf_req_id' 
+            ? '<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 11px; color: #cbd5e1;">💡 Кликните для детального просмотра</div>' 
+            : '';
+          
           ganttTooltip.innerHTML = `
             <div class="gantt-tooltip-title">${escapeHtml(key)}</div>
             <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Начало:</span><span class="gantt-tooltip-value">${new Date(start).toLocaleString('ru-RU')}</span></div>
@@ -1525,12 +1601,41 @@
             <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Длительность:</span><span class="gantt-tooltip-value">${durationText}</span></div>
             <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Логов:</span><span class="gantt-tooltip-value">${arr.length}</span></div>
             <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Уровень:</span><span class="gantt-tooltip-value" style="color: ${lvl==='error'?'#fca5a5':lvl==='warn'?'#fcd34d':lvl==='trace'?'#c4b5fd':'#86efac'}">${lvl.toUpperCase()}</span></div>
+            ${clickHint}
           `;
           ganttTooltip.style.display = 'block';
         });
         bar.addEventListener('mousemove', (e) => {
-          ganttTooltip.style.left = (e.clientX + 15) + 'px';
-          ganttTooltip.style.top = (e.clientY + 15) + 'px';
+          // Умное позиционирование tooltip
+          const tooltipWidth = ganttTooltip.offsetWidth || 300;
+          const tooltipHeight = ganttTooltip.offsetHeight || 200;
+          const padding = 15;
+          
+          let left = e.clientX + padding;
+          let top = e.clientY + padding;
+          
+          // Проверка правого края
+          if (left + tooltipWidth > window.innerWidth) {
+            left = e.clientX - tooltipWidth - padding;
+          }
+          
+          // Проверка нижнего края
+          if (top + tooltipHeight > window.innerHeight) {
+            top = e.clientY - tooltipHeight - padding;
+          }
+          
+          // Проверка левого края
+          if (left < 0) {
+            left = padding;
+          }
+          
+          // Проверка верхнего края
+          if (top < 0) {
+            top = padding;
+          }
+          
+          ganttTooltip.style.left = left + 'px';
+          ganttTooltip.style.top = top + 'px';
         });
         bar.addEventListener('mouseleave', () => {
           ganttTooltip.style.display = 'none';
@@ -1565,6 +1670,307 @@
           opt2.value = id;
           quickReqIdList.appendChild(opt2);
         }
+      }
+    }
+
+    // Показать детальную информацию о логе
+    function showLogDetails(log) {
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      `;
+      
+      const content = document.createElement('div');
+      content.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      `;
+      
+      const lvl = (log.level || 'info').toLowerCase();
+      const levelColor = lvl === 'error' ? '#ef4444' : lvl === 'warn' ? '#f59e0b' : lvl === 'info' ? '#10b981' : lvl === 'debug' ? '#3b82f6' : '#8b5cf6';
+      
+      content.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="margin: 0; color: #1e293b;">Детали лога</h3>
+          <button id="closeLogDetails" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">×</button>
+        </div>
+        
+        <div style="display: grid; gap: 16px;">
+          <div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Уровень</div>
+            <div style="display: inline-block; padding: 4px 12px; border-radius: 999px; background: ${levelColor}; color: white; font-weight: 600; font-size: 12px;">
+              ${lvl.toUpperCase()}
+            </div>
+          </div>
+          
+          <div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Время</div>
+            <div style="font-size: 14px; color: #1e293b;">${log.timestamp || log['@timestamp'] || 'N/A'}</div>
+          </div>
+          
+          <div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Сообщение</div>
+            <div style="font-size: 14px; color: #1e293b; white-space: pre-wrap;">${escapeHtml(log.message || log['@message'] || '')}</div>
+          </div>
+          
+          ${log.tf_req_id ? `
+          <div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Request ID</div>
+            <div style="font-size: 14px; color: #1e293b; font-family: monospace;">${log.tf_req_id}</div>
+          </div>
+          ` : ''}
+          
+          ${log.tf_section ? `
+          <div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Секция</div>
+            <div style="font-size: 14px; color: #1e293b;">${log.tf_section}</div>
+          </div>
+          ` : ''}
+          
+          ${log.tf_rpc ? `
+          <div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">RPC</div>
+            <div style="font-size: 14px; color: #1e293b;">${log.tf_rpc}</div>
+          </div>
+          ` : ''}
+          
+          ${log.tf_resource_type ? `
+          <div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Resource Type</div>
+            <div style="font-size: 14px; color: #1e293b;">${log.tf_resource_type}</div>
+          </div>
+          ` : ''}
+          
+          ${log.tf_provider_addr ? `
+          <div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Provider</div>
+            <div style="font-size: 14px; color: #1e293b;">${log.tf_provider_addr}</div>
+          </div>
+          ` : ''}
+          
+          <div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Raw JSON</div>
+            <pre style="background: #f8fafc; padding: 12px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 300px;">${escapeHtml(log.raw_pretty || log.raw || JSON.stringify(log, null, 2))}</pre>
+          </div>
+        </div>
+      `;
+      
+      modal.appendChild(content);
+      document.body.appendChild(modal);
+      
+      // Закрытие модального окна
+      const closeBtn = document.getElementById('closeLogDetails');
+      const closeModal = () => {
+        document.body.removeChild(modal);
+      };
+      
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+      
+      // ESC для закрытия
+      const handleEsc = (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+          document.removeEventListener('keydown', handleEsc);
+        }
+      };
+      document.addEventListener('keydown', handleEsc);
+    }
+
+    // Детальная диаграмма Ганта для одного Request ID
+    async function showDetailedGantt(requestId, logs) {
+      // Сохраняем состояние детальной диаграммы
+      ganttDetailedView = { requestId, logs };
+      
+      const ganttEl = document.getElementById('gantt');
+      const ganttStats = document.getElementById('ganttStats');
+      const timelinePageTitle = document.getElementById('timelinePageTitle');
+      
+      // Обновляем заголовок
+      timelinePageTitle.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button id="ganttBackBtn" class="btn-secondary" style="padding: 6px 12px;">← Назад</button>
+          <span>Детальная диаграмма: ${requestId.substring(0, 20)}...</span>
+        </div>
+      `;
+      
+      // Кнопка назад
+      document.getElementById('ganttBackBtn').addEventListener('click', () => {
+        ganttDetailedView = null; // Сбрасываем состояние
+        renderGanttFromCurrent();
+      });
+      
+      // Статистика
+      const stats = { total: logs.length, errors: 0, warns: 0, info: 0, debug: 0, trace: 0 };
+      for (const e of logs) {
+        const lvl = (e.level || '').toLowerCase();
+        if (lvl === 'error') stats.errors++;
+        else if (lvl === 'warn') stats.warns++;
+        else if (lvl === 'info') stats.info++;
+        else if (lvl === 'debug') stats.debug++;
+        else if (lvl === 'trace') stats.trace++;
+      }
+      
+      ganttStats.innerHTML = `
+        <div class="gantt-stat"><div class="gantt-stat-label">Всего логов</div><div class="gantt-stat-value">${stats.total}</div></div>
+        <div class="gantt-stat" style="border-left-color: #ef4444;"><div class="gantt-stat-label">Errors</div><div class="gantt-stat-value" style="color: #ef4444;">${stats.errors}</div></div>
+        <div class="gantt-stat" style="border-left-color: #f59e0b;"><div class="gantt-stat-label">Warnings</div><div class="gantt-stat-value" style="color: #f59e0b;">${stats.warns}</div></div>
+        <div class="gantt-stat" style="border-left-color: #10b981;"><div class="gantt-stat-label">Info</div><div class="gantt-stat-value" style="color: #10b981;">${stats.info}</div></div>
+        <div class="gantt-stat" style="border-left-color: #3b82f6;"><div class="gantt-stat-label">Debug</div><div class="gantt-stat-value" style="color: #3b82f6;">${stats.debug}</div></div>
+        <div class="gantt-stat" style="border-left-color: #8b5cf6;"><div class="gantt-stat-label">Trace</div><div class="gantt-stat-value" style="color: #8b5cf6;">${stats.trace}</div></div>
+      `;
+      
+      // Вычисление временного диапазона
+      const stamps = [];
+      for (const e of logs) {
+        const d = entryTimestampToDate(e);
+        if (d) stamps.push(d.getTime());
+      }
+      
+      if (!stamps.length) {
+        ganttEl.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;">Нет данных для детальной диаграммы</div>';
+        return;
+      }
+      
+      const minT = Math.min(...stamps), maxT = Math.max(...stamps);
+      const span = Math.max(1, maxT - minT);
+      
+      // Временная ось
+      ganttEl.innerHTML = '';
+      const timeAxis = document.createElement('div');
+      timeAxis.className = 'gantt-time-axis';
+      timeAxis.style.gridColumn = '2';
+      timeAxis.style.width = `${100 * ganttZoom}%`;
+      
+      const baseTickCount = Math.min(20, Math.max(10, Math.floor(span / 1000)));
+      const tickCount = Math.floor(baseTickCount * ganttZoom);
+      
+      for (let i = 0; i <= tickCount; i++) {
+        const t = minT + (span * i / tickCount);
+        const d = new Date(t);
+        const timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+        
+        const tick = document.createElement('div');
+        tick.className = 'gantt-time-tick';
+        tick.textContent = timeStr;
+        const position = ((t - minT) / span) * 100;
+        tick.style.left = `${position}%`;
+        timeAxis.appendChild(tick);
+      }
+      
+      ganttEl.appendChild(document.createElement('div'));
+      ganttEl.appendChild(timeAxis);
+      
+      // Сортируем логи по времени
+      const sortedLogs = [...logs].sort((a, b) => {
+        const aTime = entryTimestampToDate(a)?.getTime() || 0;
+        const bTime = entryTimestampToDate(b)?.getTime() || 0;
+        return aTime - bTime;
+      });
+      
+      // Рендерим каждый лог как отдельную строку
+      for (const log of sortedLogs) {
+        const d = entryTimestampToDate(log);
+        if (!d) continue;
+        
+        const timestamp = d.getTime();
+        const left = ((timestamp - minT) / span) * 100;
+        const width = 0.5; // Фиксированная ширина для точечных событий
+        
+        const lvl = (log.level || 'info').toLowerCase();
+        const message = (log.message || log['@message'] || '').substring(0, 50);
+        
+        const rowLabel = document.createElement('div');
+        rowLabel.className = 'gantt-label';
+        rowLabel.style.fontSize = '11px';
+        rowLabel.textContent = message || 'Log entry';
+        rowLabel.title = log.message || log['@message'] || '';
+        
+        // Клик по лейблу - показать детали лога
+        rowLabel.addEventListener('click', () => {
+          showLogDetails(log);
+        });
+        
+        const track = document.createElement('div');
+        track.className = 'gantt-track';
+        track.style.width = `${100 * ganttZoom}%`;
+        track.style.height = '24px';
+        
+        const grid = document.createElement('div');
+        grid.className = 'gantt-grid';
+        track.appendChild(grid);
+        
+        const bar = document.createElement('div');
+        bar.className = `gantt-bar ${lvl}`;
+        bar.style.left = left + '%';
+        bar.style.width = width + '%';
+        bar.style.height = '16px';
+        bar.style.top = '4px';
+        
+        // Tooltip
+        bar.addEventListener('mouseenter', (e) => {
+          ganttTooltip.innerHTML = `
+            <div class="gantt-tooltip-title">${escapeHtml(message)}</div>
+            <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Время:</span><span class="gantt-tooltip-value">${d.toLocaleString('ru-RU')}</span></div>
+            <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">Уровень:</span><span class="gantt-tooltip-value">${lvl.toUpperCase()}</span></div>
+            <div class="gantt-tooltip-row"><span class="gantt-tooltip-label">RPC:</span><span class="gantt-tooltip-value">${log.tf_rpc || 'N/A'}</span></div>
+          `;
+          ganttTooltip.style.display = 'block';
+        });
+        
+        bar.addEventListener('mousemove', (e) => {
+          // Умное позиционирование tooltip
+          const tooltipWidth = ganttTooltip.offsetWidth || 300;
+          const tooltipHeight = ganttTooltip.offsetHeight || 200;
+          const padding = 15;
+          
+          let left = e.clientX + padding;
+          let top = e.clientY + padding;
+          
+          // Проверка правого края
+          if (left + tooltipWidth > window.innerWidth) {
+            left = e.clientX - tooltipWidth - padding;
+          }
+          
+          // Проверка нижнего края
+          if (top + tooltipHeight > window.innerHeight) {
+            top = e.clientY - tooltipHeight - padding;
+          }
+          
+          // Проверка левого края
+          if (left < 0) {
+            left = padding;
+          }
+          
+          // Проверка верхнего края
+          if (top < 0) {
+            top = padding;
+          }
+          
+          ganttTooltip.style.left = left + 'px';
+          ganttTooltip.style.top = top + 'px';
+        });
+        
+        bar.addEventListener('mouseleave', () => {
+          ganttTooltip.style.display = 'none';
+        });
+        
+        track.appendChild(bar);
+        ganttEl.appendChild(rowLabel);
+        ganttEl.appendChild(track);
       }
     }
 
